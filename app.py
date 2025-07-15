@@ -39,78 +39,60 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 # ====== LAYER 3: LAPORAN PENUH ======
 elif selected_tab == "Laporan Penuh":
-    st.markdown("## 📂 Pilih Fail Excel Untuk Tunjuk Data")
-    uploaded_excel = st.file_uploader("Muat naik fail Excel (format sama seperti output_laporan_harian.xlsx)", type=["xlsx"])
-
-    if uploaded_excel:
-        df = pd.read_excel(uploaded_excel)
-    else:
-        excel_file = "output_laporan_harian.xlsx"
-        df = pd.read_excel(excel_file)
+    st.markdown("## 📂 Paparan Laporan PDF (Jun 2025)")
 
     report_folder = Path("01_Jun_2025")
-    df["Tarikh"] = df["Tarikh"].astype(str).str.zfill(6)
-    df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
-    st.sidebar.header("🔍 Tapisan")
-    selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
-    all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
-    selected_vessel = st.sidebar.selectbox("Tapis Ikut Kapal", ["Semua"] + sorted(all_vessels))
-    search_keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail / Kapal")
+    try:
+        df = pd.read_excel("output_laporan_harian.xlsx")
+        df["Tarikh"] = df["Tarikh"].astype(str).str.zfill(6)
+        df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
-    filtered = df.copy()
-    if selected_date != "Semua":
-        filtered = filtered[filtered["Tarikh"] == selected_date]
+        st.sidebar.header("🔍 Tapisan")
+        selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
+        all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
+        selected_vessel = st.sidebar.selectbox("Tapis Ikut Kapal", ["Semua"] + sorted(all_vessels))
+        search_keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail / Kapal")
 
-    if selected_vessel != "Semua":
-        filtered = filtered[
-            (filtered["Vessel 1"] == selected_vessel) |
-            (filtered["Vessel 2"] == selected_vessel) |
-            (filtered["Vessel 3"] == selected_vessel)
-        ]
+        filtered = df.copy()
+        if selected_date != "Semua":
+            filtered = filtered[filtered["Tarikh"] == selected_date]
 
-    if search_keyword:
-        filtered = filtered[
-            filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
-            filtered["Kapal Terlibat"].str.contains(search_keyword, case=False, na=False)
-        ]
+        if selected_vessel != "Semua":
+            filtered = filtered[
+                (filtered["Vessel 1"] == selected_vessel) |
+                (filtered["Vessel 2"] == selected_vessel) |
+                (filtered["Vessel 3"] == selected_vessel)
+            ]
 
-    if selected_date == "Semua":
-        st.write(f"### 📅 Tarikh Dipilih: **Semua Tarikh**")
-    else:
-        st.write(f"### 📅 Tarikh Dipilih: {selected_date}")
+        if search_keyword:
+            filtered = filtered[
+                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
+                filtered["Kapal Terlibat"].str.contains(search_keyword, case=False, na=False)
+            ]
 
-    st.write(f"Jumlah laporan dijumpai: **{len(filtered)}**")
+        st.write(f"Jumlah laporan dijumpai: *{len(filtered)}*")
 
-    with st.container():
-        for i, row in filtered.iterrows():
+        for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
             file_path = report_folder / folder_str / row["Nama Fail"]
 
-            with st.container():
-                st.markdown(f"#### 📄 {row['Nama Fail']}")
-                st.write(f"Kapal Terlibat: **{row['Kapal Terlibat']}**")
+            if file_path.exists() and file_path.suffix.lower() == ".pdf":
+                with open(file_path, "rb") as f:
+                    base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+                st.markdown(f"### 📄 {row['Nama Fail']}")
+                st.write(f"Kapal Terlibat: *{row['Kapal Terlibat']}*")
+                pdf_viewer = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600px" type="application/pdf"></iframe>'
+                st.markdown(pdf_viewer, unsafe_allow_html=True)
 
-                if file_path.exists():
-                    with open(file_path, "rb") as f:
-                        st.download_button(
-                            label="📥 Muat Turun Report",
-                            data=f,
-                            file_name=row["Nama Fail"],
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        )
-                else:
-                    st.error(f"❌ Fail tak jumpa: {file_path}")
+                # Butang Muat Turun
+                st.download_button(
+                    label="📥 Muat Turun PDF",
+                    data=open(file_path, "rb").read(),
+                    file_name=row["Nama Fail"],
+                    mime="application/pdf"
+                )
 
-    st.markdown("---")
-    st.subheader("📤 Muat Turun Rekod Ini Dalam Excel")
+    except Exception as e:
+        st.error(f"❌ Gagal proses laporan PDF: {e}")
 
-    export_excel = filtered.drop(columns=["Folder"]).copy()
-    st.download_button(
-        label="⬇️ Muat Turun Senarai Ini",
-        data=export_excel.to_csv(index=False).encode('utf-8'),
-        file_name=f"laporan_{selected_date}.csv",
-        mime="text/csv"
-    )
-
-st.caption("Dibangunkan oleh MDSC ✨")
