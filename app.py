@@ -45,10 +45,6 @@ elif selected_tab == "Report":
         df = pd.read_excel("output_laporan_harian.xlsx")
         report_folder = Path("01_Jun_2025/01_Jun_2025")
 
-        file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
-        file_name = row[file_column]
-
-
         # Format
         df["Date"] = df["Tarikh"].astype(str).str.zfill(6)
         df["Folder"] = df["Folder"].astype(str).str.zfill(6)
@@ -59,7 +55,6 @@ elif selected_tab == "Report":
         all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
         selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
         search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
-
 
         expand_all = st.sidebar.checkbox("🔽 Expand All Reports", value=False)
 
@@ -81,8 +76,9 @@ elif selected_tab == "Report":
         st.write(f"Reports Encountered: *{len(filtered)}*")
 
         for _, row in filtered.iterrows():
+            file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
             folder_str = f"{int(row['Folder']):06d}"
-            file_name = row["Nama Fail"]
+            file_name = row[file_column]
             file_path = report_folder / folder_str / file_name
 
             if file_path.suffix.lower() == ".pdf" and file_path.exists():
