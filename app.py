@@ -37,63 +37,61 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 
 # ====== LAYER 3: LAPORAN PENUH ======
-
-elif selected_tab == "Report":
-    import base64
-    import pandas as pd
-    from pathlib import Path
-
+elif selected_tab == "Laporan Penuh":
     st.markdown("## 📂 Paparan Laporan PDF (Jun 2025)")
 
-    # ========== LOAD DATA ==========
-    data_path = "output_laporan_harian.xlsx"
-    df = pd.read_excel(data_path)
+    import base64
+    from pathlib import Path
+    import pandas as pd
 
-    # Gabung semua vessel untuk carian
-    df["Semua Vessel"] = df[["Vessel 1", "Vessel 2", "Vessel 3"]].astype(str).agg(" | ".join, axis=1)
+    report_root = Path("01_Jun_2025")
 
-    # ========== SIDEBAR ==========
-    st.sidebar.header("🔍 Filter")
-    selected_date = st.sidebar.selectbox("Date", options=["All"] + sorted(df["Tarikh"].dropna().astype(str).unique().tolist()))
-    selected_vessel = st.sidebar.selectbox("Filter by Vessel", options=["All"] + sorted(set(df["Vessel 1"].dropna()) | set(df["Vessel 2"].dropna()) | set(df["Vessel 3"].dropna())))
+    # 📄 Baca senarai laporan dari Excel
+    df = pd.read_excel("output_laporan_harian.xlsx", sheet_name=2)
+    st.write(f"Reports Encountered: *{len(df)}*")
+
+    # 🔍 Sidebar Filter
+    st.sidebar.markdown("### 🔍 Filter")
+    tarikh_opsyen = ["All"] + sorted(df["Folder"].astype(str).unique())
+    vessel_opsyen = ["All"] + sorted(df["Vessel"].astype(str).unique())
+
+    tarikh_dipilih = st.sidebar.selectbox("Date", tarikh_opsyen)
+    vessel_dipilih = st.sidebar.selectbox("Filter by Vessel", vessel_opsyen)
     keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
-    expand_all = st.sidebar.checkbox("🔎 Expand All Reports", value=True)
 
-    # ========== FILTER ==========
-    filtered_df = df.copy()
+    show_all = st.sidebar.checkbox("📂 Expand All Reports", value=False)
 
-    if selected_date != "All":
-        filtered_df = filtered_df[filtered_df["Tarikh"].astype(str) == selected_date]
+    # 🔍 Tapisan
+    if tarikh_dipilih != "All":
+        df = df[df["Folder"].astype(str) == tarikh_dipilih]
 
-    if selected_vessel != "All":
-        filtered_df = filtered_df[
-            (filtered_df["Vessel 1"] == selected_vessel) |
-            (filtered_df["Vessel 2"] == selected_vessel) |
-            (filtered_df["Vessel 3"] == selected_vessel)
-        ]
+    if vessel_dipilih != "All":
+        df = df[df["Vessel"].astype(str) == vessel_dipilih]
 
     if keyword:
-        keyword_lower = keyword.lower()
-        filtered_df = filtered_df[
-            filtered_df["Nama Fail"].str.lower().str.contains(keyword_lower) |
-            filtered_df["Semua Vessel"].str.lower().str.contains(keyword_lower)
-        ]
+        df = df[df.apply(lambda row: keyword.lower() in str(row["Nama Fail"]).lower() or keyword.lower() in str(row["Vessel"]).lower(), axis=1)]
 
-    # ========== PAPARAN ==========
-    st.markdown(f"Reports Encountered: *{len(filtered_df)}*")
-
-    for _, row in filtered_df.iterrows():
-        file_name = row["Nama Fail"]
+    # ✅ Papar setiap laporan
+    for idx, row in df.iterrows():
+        file_name = str(row["Nama Fail"]).strip().replace(".docx", ".pdf")
         folder = str(row["Folder"]).strip()
-        full_path = Path("01_Jun_2025") / folder / file_name
+        full_path = report_root / folder / file_name
 
-        with st.expander(f"📄 {file_name}", expanded=expand_all):
+        with st.expander(f"{file_name}", expanded=show_all):
             if full_path.exists():
-                with open(full_path, "rb") as pdf_file:
-                    base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
+                # 👁️ Papar PDF
+                with open(full_path, "rb") as f:
+                    base64_pdf = base64.b64encode(f.read()).decode("utf-8")
                     pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
                     st.markdown(pdf_display, unsafe_allow_html=True)
-            else:
-                st.warning(f"❗Laporan '{file_name}' tak jumpa dalam folder {folder}")
 
-        st.markdown("---")
+                # 📥 Muat turun
+                with open(full_path, "rb") as f_pdf:
+                    st.download_button(
+                        label="📥 Muat Turun PDF",
+                        data=f_pdf,
+                        file_name=file_name,
+                        mime="application/pdf"
+                    )
+            else:
+                st.warning(f"❗ Laporan '{file_name}' tak jumpa dalam folder {folder}")
