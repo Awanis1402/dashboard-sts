@@ -7,7 +7,6 @@ import os
 import base64
 import zipfile
 import io
-import pdfplumber
 
 # ====== SETUP ======
 st.set_page_config(page_title="Dashboard STS", layout="wide")
