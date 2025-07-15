@@ -102,6 +102,6 @@ elif selected_tab == "Report":
                             mime="application/pdf"
                         )
 
-     except Exception as e:
+    except Exception as e:
         import traceback
         st.error(f"❌ Gagal papar laporan:\n\n{traceback.format_exc()}")
