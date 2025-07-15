@@ -27,7 +27,7 @@ else:
 
 # ====== LAYER 1: ILLEGAL ANCHORING (EMBED LOOKER) ======
 if selected_tab == "ILLEGAL ANCHORING":
-    st.subheader("📍 Illegal Anchoring (Jun 2025)")
+    st.subheader("📍 Illegal Anchoring")
     components.iframe("https://lookerstudio.google.com/embed/reporting/f5e896a9-cd90-44ce-8462-8ab7847ce969/page/p_lm853hjitd", height=800, scrolling=True)
 
 # ====== LAYER 2: STS & BUNKERING Activity (EMBED LOOKER) ======
