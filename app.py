@@ -40,65 +40,37 @@ elif selected_tab == "STS & BUNKERING Activity":
 elif selected_tab == "Laporan Penuh":
     st.markdown("## 📂 Paparan Laporan PDF (Jun 2025)")
 
-    report_folder = "01_Jun_2025"
+    import base64
+    from pathlib import Path
 
-    df = pd.read_excel("output_laporan_harian.xlsx")
-    df["Tarikh"] = df["Tarikh"].astype(str).str.zfill(6)
-    df["Folder"] = df["Folder"].astype(str).str.zfill(6)
+    report_folder = Path("01_Jun_2025")
+    all_files = list(report_folder.rglob("*.pdf"))
 
     st.sidebar.header("🔍 Tapisan")
-    selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
-    all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
-    selected_vessel = st.sidebar.selectbox("Tapis Ikut Kapal", ["Semua"] + sorted(all_vessels))
-    search_keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail / Kapal")
+    keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail")
 
-    filtered = df.copy()
+    if keyword:
+        all_files = [f for f in all_files if keyword.lower() in f.name.lower()]
 
-    if selected_date != "Semua":
-        filtered = filtered[filtered["Tarikh"] == selected_date]
+    st.write(f"Jumlah laporan dijumpai: *{len(all_files)}*")
 
-    if selected_vessel != "Semua":
-        filtered = filtered[
-            (filtered["Vessel 1"] == selected_vessel) |
-            (filtered["Vessel 2"] == selected_vessel) |
-            (filtered["Vessel 3"] == selected_vessel)
-        ]
+    for f in sorted(all_files):
+        st.markdown(f"#### 📄 {f.name}")
 
-    if search_keyword:
-        filtered = filtered[
-            filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
-            filtered["Kapal Terlibat"].str.contains(search_keyword, case=False, na=False)
-        ]
+        # 👁️ View PDF dalam Streamlit
+        with open(f, "rb") as pdf_file:
+            base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
 
-    st.write(f"Jumlah laporan dijumpai: *{len(filtered)}*")
+        # 📥 Butang Muat Turun
+        with open(f, "rb") as f_pdf:
+            st.download_button(
+                label="📥 Muat Turun PDF",
+                data=f_pdf,
+                file_name=f.name,
+                mime="application/pdf"
+            )
 
-    with st.container():
-        for i, row in filtered.iterrows():
-            folder_str = f"{int(row['Folder']):06d}"
-            file_name = row["Nama Fail"]
-            file_url = f"https://raw.githubusercontent.com/Awanis1402/dashboard-sts/main/{report_folder}/{folder_str}/{file_name}"
-
-            st.markdown(f"#### 📄 {file_name}")
-            st.write(f"Kapal Terlibat: *{row['Kapal Terlibat']}*")
-
-            if file_name.lower().endswith(".pdf"):
-                st.components.v1.iframe(file_url, height=600)
-                st.markdown(f"[📥 Muat Turun PDF]({file_url})", unsafe_allow_html=True)
-
-            elif file_name.lower().endswith(".docx"):
-                st.markdown(f"[📥 Muat Turun Word]({file_url})", unsafe_allow_html=True)
-
-            else:
-                st.warning("❗ Format fail tidak disokong untuk paparan langsung.")
-
-    st.markdown("---")
-    st.subheader("⬇️ Muat Turun Rekod Ini (CSV)")
-
-    export_excel = filtered.drop(columns=["Folder"]).copy()
-    st.download_button(
-        label="Muat Turun Senarai Ini",
-        data=export_excel.to_csv(index=False).encode("utf-8"),
-        file_name=f"laporan_{selected_date}.csv",
-        mime="text/csv"
-    )
+        st.markdown("---")
 
