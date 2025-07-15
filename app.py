@@ -38,52 +38,78 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 # ====== LAYER 3: LAPORAN PENUH ======
 
-elif selected_tab == "Full Report":
-    st.markdown("## 📂 PDF Report Viewer (June 2025)")
+elif selected_tab == "Laporan Penuh":
+    st.markdown("## 📂 Pilih Fail Excel Untuk Tunjuk Data")
+    uploaded_excel = st.file_uploader("Muat naik fail Excel (format sama seperti output_laporan_harian.xlsx)", type=["xlsx"])
 
-import streamlit as st
-from pathlib import Path
-import base64
-
-def show_layer_3():
-    st.markdown("## 📂 Report Viewer (Auto-Detect ZIP PDFs)")
+    if uploaded_excel:
+        df = pd.read_excel(uploaded_excel)
+    else:
+        excel_file = "output_laporan_harian.xlsx"
+        df = pd.read_excel(excel_file)
 
     report_folder = Path("01_Jun_2025")
-    all_pdfs = list(report_folder.rglob("*.pdf"))
+    df["Tarikh"] = df["Tarikh"].astype(str).str.zfill(6)
+    df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
-    st.sidebar.header("🔍 Filter")
-    keyword = st.sidebar.text_input("Search Keyword in File Name")
+    st.sidebar.header("🔍 Tapisan")
+    selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
+    all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
+    selected_vessel = st.sidebar.selectbox("Tapis Ikut Kapal", ["Semua"] + sorted(all_vessels))
+    search_keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail / Kapal")
 
-    if keyword:
-        all_pdfs = [f for f in all_pdfs if keyword.lower() in f.name.lower()]
+    filtered = df.copy()
+    if selected_date != "Semua":
+        filtered = filtered[filtered["Tarikh"] == selected_date]
 
-    st.write(f"Total reports found: **{len(all_pdfs)}**")
+    if selected_vessel != "Semua":
+        filtered = filtered[
+            (filtered["Vessel 1"] == selected_vessel) |
+            (filtered["Vessel 2"] == selected_vessel) |
+            (filtered["Vessel 3"] == selected_vessel)
+        ]
 
-    for f in sorted(all_pdfs):
-        st.markdown(f"#### 📄 {f.name}")
+    if search_keyword:
+        filtered = filtered[
+            filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
+            filtered["Kapal Terlibat"].str.contains(search_keyword, case=False, na=False)
+        ]
 
-        # Try detect vessel name from file name
-        vessel = "Unknown"
-        parts = f.name.replace(".pdf", "").split("_")
-        for part in parts:
-            if part.lower() not in ["report", "laporan", "unknown", "vessel", "ship"]:
-                vessel = part
-                break
+    if selected_date == "Semua":
+        st.write(f"### 📅 Tarikh Dipilih: **Semua Tarikh**")
+    else:
+        st.write(f"### 📅 Tarikh Dipilih: {selected_date}")
 
-        st.write(f"🛳️ Vessel: **{vessel}**")
+    st.write(f"Jumlah laporan dijumpai: **{len(filtered)}**")
 
-        with open(f, "rb") as pdf_file:
-            base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
-            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>'
-            st.markdown(pdf_display, unsafe_allow_html=True)
+    with st.container():
+        for i, row in filtered.iterrows():
+            folder_str = f"{int(row['Folder']):06d}"
+            file_path = report_folder / folder_str / row["Nama Fail"]
 
-        with open(f, "rb") as f_pdf:
-            st.download_button(
-                label="📥 Download PDF",
-                data=f_pdf,
-                file_name=f.name,
-                mime="application/pdf"
-            )
+            with st.container():
+                st.markdown(f"#### 📄 {row['Nama Fail']}")
+                st.write(f"Kapal Terlibat: **{row['Kapal Terlibat']}**")
 
-        st.markdown("---")
+                if file_path.exists():
+                    with open(file_path, "rb") as f:
+                        st.download_button(
+                            label="📥 Muat Turun Report",
+                            data=f,
+                            file_name=row["Nama Fail"],
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        )
+                else:
+                    st.error(f"❌ Fail tak jumpa: {file_path}")
+
+    st.markdown("---")
+    st.subheader("📤 Muat Turun Rekod Ini Dalam Excel")
+
+    export_excel = filtered.drop(columns=["Folder"]).copy()
+    st.download_button(
+        label="⬇️ Muat Turun Senarai Ini",
+        data=export_excel.to_csv(index=False).encode('utf-8'),
+        file_name=f"laporan_{selected_date}.csv",
+        mime="text/csv"
+    )
 
