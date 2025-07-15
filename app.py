@@ -30,12 +30,12 @@ else:
 # ====== LAYER 1: ILLEGAL ANCHORING (EMBED LOOKER) ======
 if selected_tab == "ILLEGAL ANCHORING":
     st.subheader("📍 Illegal Anchoring – Looker Studio (Jun 2025)")
-    components.iframe("https://lookerstudio.google.com/embed/reporting/q3pWaEwKP1o/page/p_zye5kx3ddc", height=800, scrolling=True)
+    components.iframe("https://lookerstudio.google.com/embed/reporting/f5e896a9-cd90-44ce-8462-8ab7847ce969/page/p_lm853hjitd", height=800, scrolling=True)
 
 # ====== LAYER 2: STS & BUNKERING Activity (EMBED LOOKER) ======
 elif selected_tab == "STS & BUNKERING Activity":
     st.subheader("📂 STS & Bunkering Activity – Looker Studio")
-    components.iframe("https://lookerstudio.google.com/embed/reporting/912f4ef9-e0cf-4c47-b818-f481c9c67289/page/kN8QF?s=uRlJkUW3v34", height=800, scrolling=True)
+    components.iframe("https://lookerstudio.google.com/embed/reporting/f5e896a9-cd90-44ce-8462-8ab7847ce969/page/p_lm853hjitd", height=800, scrolling=True)
 
 # ====== LAYER 3: STATISTIK RINGKAS ======
 elif selected_tab == "Statistik Ringkas":
