@@ -37,7 +37,6 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 
 # ====== LAYER 3: LAPORAN PENUH ======
-
 elif selected_tab == "Report":
     st.markdown("## 📂 Reports - June 2025")
 
@@ -52,12 +51,22 @@ elif selected_tab == "Report":
     else:
         st.success(f"📄 Total reports found: **{len(all_pdfs)}**")
 
+    # Extract date folder (assume format: 01_Jun_2025/YYYYMM/)
+    date_folders = sorted(set(p.parent.name for p in all_pdfs))
+
+    selected_date = st.sidebar.selectbox("📅 Filter by Date Folder", ["All"] + date_folders)
     keyword = st.sidebar.text_input("🔍 Search by filename")
 
+    # Apply filter
+    filtered_pdfs = all_pdfs
+    if selected_date != "All":
+        filtered_pdfs = [f for f in filtered_pdfs if f.parent.name == selected_date]
     if keyword:
-        all_pdfs = [f for f in all_pdfs if keyword.lower() in f.name.lower()]
+        filtered_pdfs = [f for f in filtered_pdfs if keyword.lower() in f.name.lower()]
 
-    for f in sorted(all_pdfs):
+    st.write(f"📁 Reports matched: **{len(filtered_pdfs)}**")
+
+    for f in sorted(filtered_pdfs):
         with st.expander(f"📄 {f.name}"):
             with open(f, "rb") as pdf_file:
                 base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
