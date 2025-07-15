@@ -54,8 +54,8 @@ elif selected_tab == "Report":
     # Extract date folder (assume format: 01_Jun_2025/YYYYMM/)
     date_folders = sorted(set(p.parent.name for p in all_pdfs))
 
-    selected_date = st.sidebar.selectbox("📅 Filter by Date Folder", ["All"] + date_folders)
-    keyword = st.sidebar.text_input("🔍 Search by filename")
+    selected_date = st.sidebar.selectbox("📅 Filter by Date", ["All"] + date_folders)
+    keyword = st.sidebar.text_input("🔍 Search")
 
     # Apply filter
     filtered_pdfs = all_pdfs
