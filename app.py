@@ -70,7 +70,7 @@ elif selected_tab == "Report":
             ]
         if search_keyword:
             filtered = filtered[
-                filtered["File Name"].str.contains(search_keyword, case=False, na=False) |
+                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
                 filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
             ]
 
