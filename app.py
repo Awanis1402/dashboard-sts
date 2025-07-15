@@ -41,30 +41,42 @@ elif selected_tab == "STS & BUNKERING Activity":
 elif selected_tab == "Full Report":
     st.markdown("## 📂 PDF Report Viewer (June 2025)")
 
-    import base64
-    from pathlib import Path
+import streamlit as st
+from pathlib import Path
+import base64
+
+def show_layer_3():
+    st.markdown("## 📂 Report Viewer (Auto-Detect ZIP PDFs)")
 
     report_folder = Path("01_Jun_2025")
-    all_files = list(report_folder.rglob("*.pdf"))
+    all_pdfs = list(report_folder.rglob("*.pdf"))
 
     st.sidebar.header("🔍 Filter")
     keyword = st.sidebar.text_input("Search Keyword in File Name")
 
     if keyword:
-        all_files = [f for f in all_files if keyword.lower() in f.name.lower()]
+        all_pdfs = [f for f in all_pdfs if keyword.lower() in f.name.lower()]
 
-    st.write(f"Total reports found: **{len(all_files)}**")
+    st.write(f"Total reports found: **{len(all_pdfs)}**")
 
-    for f in sorted(all_files):
+    for f in sorted(all_pdfs):
         st.markdown(f"#### 📄 {f.name}")
 
-        # 👁️ Display PDF in Streamlit
+        # Try detect vessel name from file name
+        vessel = "Unknown"
+        parts = f.name.replace(".pdf", "").split("_")
+        for part in parts:
+            if part.lower() not in ["report", "laporan", "unknown", "vessel", "ship"]:
+                vessel = part
+                break
+
+        st.write(f"🛳️ Vessel: **{vessel}**")
+
         with open(f, "rb") as pdf_file:
             base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
-            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>'
             st.markdown(pdf_display, unsafe_allow_html=True)
 
-        # 📥 Download Button
         with open(f, "rb") as f_pdf:
             st.download_button(
                 label="📥 Download PDF",
