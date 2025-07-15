@@ -10,7 +10,7 @@ import io
 
 # ====== SETUP ======
 st.set_page_config(page_title="Dashboard STS", layout="wide")
-st.title("📊 Dashboard Aktiviti STS Mencurigakan - Jun 2025")
+st.title("📊 Suspicious STS Activity Dashboard - June 2025")
 
 # ====== SETUP SESSION STATE ======
 if "selected_vessel_detail" not in st.session_state:
@@ -18,12 +18,12 @@ if "selected_vessel_detail" not in st.session_state:
 
 # ====== PILIH LAYER PAPARAN ======
 if st.session_state.selected_vessel_detail:
-    selected_tab = "📌 Butiran Kapal"
+    selected_tab = "📌 Vessel Details"
 else:
     selected_tab = st.sidebar.radio("Pilih Paparan", [
         "ILLEGAL ANCHORING",
         "STS & BUNKERING Activity",
-        "Laporan Penuh"])
+        "Report"])
 
 # ====== LAYER 1: ILLEGAL ANCHORING (EMBED LOOKER) ======
 if selected_tab == "ILLEGAL ANCHORING":
@@ -38,30 +38,31 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 # ====== LAYER 3: LAPORAN PENUH ======
 
-elif selected_tab == "Laporan Penuh":
-    st.markdown("## 📂 Senarai Laporan PDF Mengikut Tarikh")
+elif selected_tab == "Report":
+    st.markdown("## 📂 Report")
 
     try:
-        df = pd.read_excel("output_laporan_harian.xlsx")
+        df = pd.read_excel("output_Daily_Report.xlsx")
         report_folder = Path("01_Jun_2025")
 
         # Format
-        df["Tarikh"] = df["Tarikh"].astype(str).str.zfill(6)
+        df["Date"] = df["Tarikh"].astype(str).str.zfill(6)
         df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
         # Tapisan
-        st.sidebar.header("🔍 Tapisan")
+        st.sidebar.header("🔍 Filter")
         selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
         all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
-        selected_vessel = st.sidebar.selectbox("Tapis Ikut Kapal", ["Semua"] + sorted(all_vessels))
-        search_keyword = st.sidebar.text_input("Cari Kata Kunci Dalam Nama Fail / Kapal")
+        selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
+        search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
 
-        expand_all = st.sidebar.checkbox("🔽 Papar Semua Laporan Sekali (Expand All)", value=False)
+
+        expand_all = st.sidebar.checkbox("🔽 Expand All Reports", value=False)
 
         filtered = df.copy()
-        if selected_date != "Semua":
+        if selected_date != "All":
             filtered = filtered[filtered["Tarikh"] == selected_date]
-        if selected_vessel != "Semua":
+        if selected_vessel != "All":
             filtered = filtered[
                 (filtered["Vessel 1"] == selected_vessel) |
                 (filtered["Vessel 2"] == selected_vessel) |
@@ -69,20 +70,20 @@ elif selected_tab == "Laporan Penuh":
             ]
         if search_keyword:
             filtered = filtered[
-                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
-                filtered["Kapal Terlibat"].str.contains(search_keyword, case=False, na=False)
+                filtered["File Name"].str.contains(search_keyword, case=False, na=False) |
+                filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
             ]
 
         st.write(f"Jumlah laporan dijumpai: *{len(filtered)}*")
 
         for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
-            file_name = row["Nama Fail"]
+            file_name = row["File Name"]
             file_path = report_folder / folder_str / file_name
 
             if file_path.suffix.lower() == ".pdf" and file_path.exists():
                 with st.expander(f"📄 {file_name}", expanded=expand_all):
-                    st.write(f"🛳️ Kapal Terlibat: *{row['Kapal Terlibat']}*")
+                    st.write(f"🛳️ Vessel: *{row['Vessel']}*")
 
                     with open(file_path, "rb") as f:
                         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
@@ -91,7 +92,7 @@ elif selected_tab == "Laporan Penuh":
 
                     with open(file_path, "rb") as f:
                         st.download_button(
-                            label="⬇️ Muat Turun PDF",
+                            label="⬇️ Download",
                             data=f,
                             file_name=file_name,
                             mime="application/pdf"
