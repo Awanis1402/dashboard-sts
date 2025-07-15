@@ -42,7 +42,7 @@ elif selected_tab == "Report":
     st.markdown("## 📂 Report")
 
     try:
-        df = pd.read_excel("output_Daily_Report.xlsx")
+        df = pd.read_excel("output_laporan_harian.xlsx")
         report_folder = Path("01_Jun_2025")
 
         # Format
