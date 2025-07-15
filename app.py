@@ -37,61 +37,70 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 
 # ====== LAYER 3: LAPORAN PENUH ======
-elif selected_tab == "Laporan Penuh":
-    st.markdown("## 📂 Paparan Laporan PDF (Jun 2025)")
 
-    import base64
-    from pathlib import Path
-    import pandas as pd
+elif selected_tab == "Report":
+    st.markdown("## 📂 Report")
 
-    report_root = Path("01_Jun_2025")
+    try:
+        df = pd.read_excel("output_laporan_harian.xlsx")
+        report_folder = Path("01_Jun_2025/01_Jun_2025")
 
-    # 📄 Baca senarai laporan dari Excel
-    df = pd.read_excel("output_laporan_harian.xlsx", sheet_name=2)
-    st.write(f"Reports Encountered: *{len(df)}*")
+        file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
+        file_name = row[file_column]
 
-    # 🔍 Sidebar Filter
-    st.sidebar.markdown("### 🔍 Filter")
-    tarikh_opsyen = ["All"] + sorted(df["Folder"].astype(str).unique())
-    vessel_opsyen = ["All"] + sorted(df["Vessel"].astype(str).unique())
 
-    tarikh_dipilih = st.sidebar.selectbox("Date", tarikh_opsyen)
-    vessel_dipilih = st.sidebar.selectbox("Filter by Vessel", vessel_opsyen)
-    keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
+        # Format
+        df["Date"] = df["Tarikh"].astype(str).str.zfill(6)
+        df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
-    show_all = st.sidebar.checkbox("📂 Expand All Reports", value=False)
+        # Tapisan
+        st.sidebar.header("🔍 Filter")
+        selected_date = st.sidebar.selectbox("Date", ["All"] + sorted(df["Tarikh"].unique()))
+        all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
+        selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
+        search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
 
-    # 🔍 Tapisan
-    if tarikh_dipilih != "All":
-        df = df[df["Folder"].astype(str) == tarikh_dipilih]
 
-    if vessel_dipilih != "All":
-        df = df[df["Vessel"].astype(str) == vessel_dipilih]
+        expand_all = st.sidebar.checkbox("🔽 Expand All Reports", value=False)
 
-    if keyword:
-        df = df[df.apply(lambda row: keyword.lower() in str(row["Nama Fail"]).lower() or keyword.lower() in str(row["Vessel"]).lower(), axis=1)]
+        filtered = df.copy()
+        if selected_date != "All":
+            filtered = filtered[filtered["Tarikh"] == selected_date]
+        if selected_vessel != "All":
+            filtered = filtered[
+                (filtered["Vessel 1"] == selected_vessel) |
+                (filtered["Vessel 2"] == selected_vessel) |
+                (filtered["Vessel 3"] == selected_vessel)
+            ]
+        if search_keyword:
+            filtered = filtered[
+                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
+                filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
+            ]
 
-    # ✅ Papar setiap laporan
-    for idx, row in df.iterrows():
-        file_name = str(row["Nama Fail"]).strip().replace(".docx", ".pdf")
-        folder = str(row["Folder"]).strip()
-        full_path = report_root / folder / file_name
+        st.write(f"Reports Encountered: *{len(filtered)}*")
 
-        with st.expander(f"{file_name}", expanded=show_all):
-            if full_path.exists():
-                # 👁️ Papar PDF
-                with open(full_path, "rb") as f:
-                    base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
-                    st.markdown(pdf_display, unsafe_allow_html=True)
+        for _, row in filtered.iterrows():
+            folder_str = f"{int(row['Folder']):06d}"
+            file_name = row["Nama Fail"]
+            file_path = report_folder / folder_str / file_name
 
-                # 📥 Muat turun
-                with open(full_path, "rb") as f_pdf:
-                    st.download_button(
-                        label="📥 Muat Turun PDF",
-                        data=f_pdf,
-                        file_name=file_name,
-                        mime="application/pdf"
-                    )
-            else:
-                st.warning(f"❗ Laporan '{file_name}' tak jumpa dalam folder {folder}")
+            if file_path.suffix.lower() == ".pdf" and file_path.exists():
+                with st.expander(f"📄 {file_name}", expanded=expand_all):
+                    st.write(f"🛳️ Vessel: *{row['Vessel']}*")
+
+                    with open(file_path, "rb") as f:
+                        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+                        pdf_viewer = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>'
+                        st.markdown(pdf_viewer, unsafe_allow_html=True)
+
+                    with open(file_path, "rb") as f:
+                        st.download_button(
+                            label="⬇️ Download",
+                            data=f,
+                            file_name=file_name,
+                            mime="application/pdf"
+                        )
+
+    except Exception as e:
+        st.error(f"❌ Gagal papar laporan: {e}")
