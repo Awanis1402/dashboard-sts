@@ -82,7 +82,7 @@ elif selected_tab == "Report":
 
         for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
-            file_name = row["Nama Fail"]
+            file_name = row[file_column]
             file_path = report_folder / folder_str / file_name
 
             if file_path.suffix.lower() == ".pdf" and file_path.exists():
