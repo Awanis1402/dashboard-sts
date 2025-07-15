@@ -39,7 +39,7 @@ elif selected_tab == "STS & BUNKERING Activity":
 # ====== LAYER 3: LAPORAN PENUH ======
 
 elif selected_tab == "Report":
-    st.markdown("## 📂 Laporan PDF - Jun 2025")
+    st.markdown("## 📂 Reports - June 2025")
 
     from pathlib import Path
     import base64
@@ -48,11 +48,11 @@ elif selected_tab == "Report":
     all_pdfs = list(report_folder.rglob("*.pdf"))
 
     if not all_pdfs:
-        st.warning("⚠️ Tiada laporan dijumpai.")
+        st.warning("⚠️ No reports found.")
     else:
-        st.success(f"📄 Jumlah laporan dijumpai: **{len(all_pdfs)}**")
+        st.success(f"📄 Total reports found: **{len(all_pdfs)}**")
 
-    keyword = st.sidebar.text_input("🔍 Cari dalam nama fail")
+    keyword = st.sidebar.text_input("🔍 Search by filename")
 
     if keyword:
         all_pdfs = [f for f in all_pdfs if keyword.lower() in f.name.lower()]
@@ -66,9 +66,10 @@ elif selected_tab == "Report":
 
             with open(f, "rb") as pdf_download:
                 st.download_button(
-                    label="📥 Muat Turun PDF",
+                    label="📥 Download PDF",
                     data=pdf_download,
                     file_name=f.name,
                     mime="application/pdf"
                 )
+
 
