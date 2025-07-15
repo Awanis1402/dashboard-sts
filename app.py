@@ -51,7 +51,7 @@ elif selected_tab == "Report":
 
         # Tapisan
         st.sidebar.header("🔍 Filter")
-        selected_date = st.sidebar.selectbox("Pilih Tarikh", ["Semua"] + sorted(df["Tarikh"].unique()))
+        selected_date = st.sidebar.selectbox("Date", ["All"] + sorted(df["Tarikh"].unique()))
         all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
         selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
         search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
@@ -74,7 +74,7 @@ elif selected_tab == "Report":
                 filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
             ]
 
-        st.write(f"Jumlah laporan dijumpai: *{len(filtered)}*")
+        st.write(f"Reports Encountered: *{len(filtered)}*")
 
         for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
