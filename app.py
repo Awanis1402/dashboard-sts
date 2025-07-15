@@ -7,6 +7,7 @@ import os
 import base64
 import zipfile
 import io
+import pdfplumber
 
 # ====== SETUP ======
 st.set_page_config(page_title="Dashboard STS", layout="wide")
@@ -23,8 +24,6 @@ else:
     selected_tab = st.sidebar.radio("Pilih Paparan", [
         "ILLEGAL ANCHORING",
         "STS & BUNKERING Activity",
-        "Statistik Ringkas",
-        "Rekod Keseluruhan",
         "Laporan Penuh"])
 
 # ====== LAYER 1: ILLEGAL ANCHORING (EMBED LOOKER) ======
@@ -35,10 +34,10 @@ if selected_tab == "ILLEGAL ANCHORING":
 # ====== LAYER 2: STS & BUNKERING Activity (EMBED LOOKER) ======
 elif selected_tab == "STS & BUNKERING Activity":
     st.subheader("📂 STS & Bunkering Activity – Looker Studio")
-    components.iframe("https://lookerstudio.google.com/embed/reporting/f5e896a9-cd90-44ce-8462-8ab7847ce969/page/p_lm853hjitd", height=800, scrolling=True)
+    components.iframe("https://lookerstudio.google.com/embed/reporting/912f4ef9-e0cf-4c47-b818-f481c9c67289/page/kN8QF", height=800, scrolling=True)
 
 
-# ====== LAYER 5: LAPORAN PENUH ======
+# ====== LAYER 3: LAPORAN PENUH ======
 elif selected_tab == "Laporan Penuh":
     st.markdown("## 📂 Pilih Fail Excel Untuk Tunjuk Data")
     uploaded_excel = st.file_uploader("Muat naik fail Excel (format sama seperti output_laporan_harian.xlsx)", type=["xlsx"])
