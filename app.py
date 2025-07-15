@@ -38,65 +38,40 @@ elif selected_tab == "STS & BUNKERING Activity":
 
 # ====== LAYER 3: LAPORAN PENUH ======
 
-elif selected_tab == "Report":
-    st.markdown("## 📂 Report")
+elif selected_tab == "Full Report":
+    st.markdown("## 📂 PDF Report Viewer (June 2025)")
 
-    try:
-        df = pd.read_excel("output_laporan_harian.xlsx")
-        report_folder = Path("01_Jun_2025/01_Jun_2025")
+    import base64
+    from pathlib import Path
 
-        # Format
-        df["Date"] = df["Tarikh"].astype(str).str.zfill(6)
-        df["Folder"] = df["Folder"].astype(str).str.zfill(6)
+    report_folder = Path("01_Jun_2025")
+    all_files = list(report_folder.rglob("*.pdf"))
 
-        # Tapisan
-        st.sidebar.header("🔍 Filter")
-        selected_date = st.sidebar.selectbox("Date", ["All"] + sorted(df["Tarikh"].unique()))
-        all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
-        selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
-        search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
+    st.sidebar.header("🔍 Filter")
+    keyword = st.sidebar.text_input("Search Keyword in File Name")
 
-        expand_all = st.sidebar.checkbox("🔽 Expand All Reports", value=False)
+    if keyword:
+        all_files = [f for f in all_files if keyword.lower() in f.name.lower()]
 
-        filtered = df.copy()
-        if selected_date != "All":
-            filtered = filtered[filtered["Tarikh"] == selected_date]
-        if selected_vessel != "All":
-            filtered = filtered[
-                (filtered["Vessel 1"] == selected_vessel) |
-                (filtered["Vessel 2"] == selected_vessel) |
-                (filtered["Vessel 3"] == selected_vessel)
-            ]
-        if search_keyword:
-            filtered = filtered[
-                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
-                filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
-            ]
+    st.write(f"Total reports found: **{len(all_files)}**")
 
-        st.write(f"Reports Encountered: *{len(filtered)}*")
+    for f in sorted(all_files):
+        st.markdown(f"#### 📄 {f.name}")
 
-        for _, row in filtered.iterrows():
-            file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
-            folder_str = f"{int(row['Folder']):06d}"
-            file_name = row[file_column]
-            file_path = report_folder / folder_str / file_name
+        # 👁️ Display PDF in Streamlit
+        with open(f, "rb") as pdf_file:
+            base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
+            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="700" height="500" type="application/pdf"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
 
-            if file_path.suffix.lower() == ".pdf" and file_path.exists():
-                with st.expander(f"📄 {file_name}", expanded=expand_all):
-                    st.write(f"🛳️ Vessel: *{row['Vessel']}*")
+        # 📥 Download Button
+        with open(f, "rb") as f_pdf:
+            st.download_button(
+                label="📥 Download PDF",
+                data=f_pdf,
+                file_name=f.name,
+                mime="application/pdf"
+            )
 
-                    with open(file_path, "rb") as f:
-                        base64_pdf = base64.b64encode(f.read()).decode("utf-8")
-                        pdf_viewer = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600"></iframe>'
-                        st.markdown(pdf_viewer, unsafe_allow_html=True)
+        st.markdown("---")
 
-                    with open(file_path, "rb") as f:
-                        st.download_button(
-                            label="⬇️ Download",
-                            data=f,
-                            file_name=file_name,
-                            mime="application/pdf"
-                        )
-
-    except Exception as e:
-        st.error(f"❌ Gagal papar laporan: {e}")
