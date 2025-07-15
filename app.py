@@ -45,6 +45,8 @@ elif selected_tab == "Report":
         df = pd.read_excel("output_laporan_harian.xlsx")
         report_folder = Path("01_Jun_2025")
 
+        file_column = "Nama Fail"
+
         file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
         file_name = row[file_column]
 
@@ -82,7 +84,7 @@ elif selected_tab == "Report":
 
         for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
-            file_name = row[file_column]
+            file_name = row["Nama Fail"]
             file_path = report_folder / folder_str / file_name
 
             if file_path.suffix.lower() == ".pdf" and file_path.exists():
