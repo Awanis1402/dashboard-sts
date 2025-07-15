@@ -45,11 +45,18 @@ elif selected_tab == "Report":
         df = pd.read_excel("output_laporan_harian.xlsx")
         report_folder = Path("01_Jun_2025")
 
-        file_column = "File Name" if "File Name" in df.columns else "Nama Fail"
-        file_name = row[file_column]
+        # Tukar ke column yang betul – fallback
+        file_column = None
+        for col in df.columns:
+            if "nama fail" in col.lower() or "file name" in col.lower():
+                file_column = col
+                break
 
+        if not file_column:
+            st.error("❌ Column 'File Name' tak jumpa dalam fail Excel.")
+            st.stop()
 
-        # Format
+        # Format data
         df["Date"] = df["Tarikh"].astype(str).str.zfill(6)
         df["Folder"] = df["Folder"].astype(str).str.zfill(6)
 
@@ -59,10 +66,9 @@ elif selected_tab == "Report":
         all_vessels = pd.concat([df["Vessel 1"], df["Vessel 2"], df["Vessel 3"]]).dropna().unique()
         selected_vessel = st.sidebar.selectbox("Filter by Vessel", ["All"] + sorted(all_vessels))
         search_keyword = st.sidebar.text_input("Search Keyword (File Name / Vessel)")
-
-
         expand_all = st.sidebar.checkbox("🔽 Expand All Reports", value=False)
 
+        # Apply filter
         filtered = df.copy()
         if selected_date != "All":
             filtered = filtered[filtered["Tarikh"] == selected_date]
@@ -74,20 +80,21 @@ elif selected_tab == "Report":
             ]
         if search_keyword:
             filtered = filtered[
-                filtered["Nama Fail"].str.contains(search_keyword, case=False, na=False) |
+                filtered[file_column].str.contains(search_keyword, case=False, na=False) |
                 filtered["Vessel"].str.contains(search_keyword, case=False, na=False)
             ]
 
-        st.write(f"Reports Encountered: *{len(filtered)}*")
+        st.write(f"Reports Encountered: {len(filtered)}")
 
+        # Loop setiap baris
         for _, row in filtered.iterrows():
             folder_str = f"{int(row['Folder']):06d}"
-            file_name = row["Nama Fail"]
+            file_name = row[file_column]
             file_path = report_folder / folder_str / file_name
 
             if file_path.suffix.lower() == ".pdf" and file_path.exists():
                 with st.expander(f"📄 {file_name}", expanded=expand_all):
-                    st.write(f"🛳️ Vessel: *{row['Vessel']}*")
+                    st.write(f"🛳️ Vessel: {row['Vessel']}")
 
                     with open(file_path, "rb") as f:
                         base64_pdf = base64.b64encode(f.read()).decode("utf-8")
@@ -101,7 +108,8 @@ elif selected_tab == "Report":
                             file_name=file_name,
                             mime="application/pdf"
                         )
+            else:
+                st.warning(f"❗ Laporan '{file_name}' tak jumpa dalam folder {folder_str}")
 
     except Exception as e:
-        import traceback
-        st.error(f"❌ Gagal papar laporan:\n\n{traceback.format_exc()}")
+        st.error(f"❌ Gagal papar laporan: {e}")
