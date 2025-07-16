@@ -33,7 +33,7 @@ if selected_tab == "ILLEGAL ANCHORING":
 # ====== LAYER 2: STS & BUNKERING Activity (EMBED LOOKER) ======
 elif selected_tab == "STS & BUNKERING Activity":
     st.subheader("📂 STS & Bunkering Activity ")
-    components.iframe("https://lookerstudio.google.com/embed/u/0/reporting/912f4ef9-e0cf-4c47-b818-f481c9c67289/page/kN8QF", height=800, scrolling=True)
+    components.iframe("https://lookerstudio.google.com/embed/reporting/912f4ef9-e0cf-4c47-b818-f481c9c67289/page/kN8QF", height=800, scrolling=True)
 
 # ====== LAYER 3: LAPORAN PENUH ======
 elif selected_tab == "Report":
